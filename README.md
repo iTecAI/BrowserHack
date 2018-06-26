@@ -5,3 +5,5 @@ Requires: (```pip install ```)
 * PyQt5
 * sip
 * easygui
+
+Run bmain.py
