@@ -11,6 +11,7 @@ eb = gui.exceptionbox
 import _apps
 from getpass import getuser
 
+
 class Browser(QMainWindow):
     def __init__(self):
         self.url = 'about:blank'
