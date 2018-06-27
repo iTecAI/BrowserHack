@@ -11,7 +11,6 @@ eb = gui.exceptionbox
 import _apps
 from getpass import getuser
 
-
 class Browser(QMainWindow):
     def __init__(self):
         self.url = 'about:blank'
@@ -23,6 +22,21 @@ class Browser(QMainWindow):
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.closeTab)
         self.tab1 = QWidget()
+        '''#set colors
+
+        pal = QPalette()
+        cr = pal.ColorRole
+        pal.setColor(pal.Window, QColor(102, 102, 102, 0))
+        pal.setColor(pal.Background, QColor(124, 124, 124, 0))
+        pal.setColor(pal.WindowText, QColor(232, 232, 232, 0))
+        pal.setColor(pal.Foreground, QColor(0, 0, 0, 0))
+        self.tab1.setPalette(pal)
+        self.tab1.setAutoFillBackground(True)
+        self.tab1.setBackgroundRole(pal.Background)
+        self.tab1.setStyleSheet('background-color: darkgray;')
+        
+        
+        #end set colors'''
         self.tabWebView = []
         self.lNameLine = []
         self.tabs.addTab(self.tab1,"New Tab")
@@ -30,7 +44,7 @@ class Browser(QMainWindow):
         self.closeTab(0)
         self.addTab()
         self.stage = 1
-        self.setWindowTitle("BrowserHack")
+        self.setWindowTitle("Gluon")
         self.setWindowIcon(QIcon('main_icn.png'))
         self.setCentralWidget(self.tabs)
         self.showMaximized()
@@ -46,8 +60,10 @@ class Browser(QMainWindow):
             self.tabs.setCurrentIndex( index + 1 )
             if type(url) == type(''):
                 self.tabWebView[self.tabs.currentIndex()].load(QUrl(url))
+                self.lNameLine[self.tabs.currentIndex()].setText(url)
             else:
                 self.tabWebView[self.tabs.currentIndex()].load(QUrl('https://www.google.com'))
+                self.lNameLine[self.tabs.currentIndex()].setText('https://www.google.com')
         except:
             eb()
 
@@ -270,7 +286,9 @@ class Browser(QMainWindow):
 
     def runApp(self, _app_):
         try:
-            exec('_apps.' + _app_ + '.main.run("' + self.url + '")')
+            do = eval('_apps.' + _app_ + '.main.run("' + self.url + '")')
+            if do != None:
+                exec(do)
         except:
             eb()
         
