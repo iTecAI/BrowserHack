@@ -10,18 +10,33 @@ import easygui as gui
 eb = gui.exceptionbox
 import _apps
 from getpass import getuser
-
+from time import time, sleep
+        
 class Browser(QMainWindow):
     def __init__(self):
         self.url = 'about:blank'
-        self.page = QWebEnginePage
+        self.page = QWebEnginePage()
+        self.Settings = {}
+        try:
+            prevsetf = open('Settings.bhk', 'r')
+            prevsetl = prevsetf.read().splitlines()
+            for i in prevsetl:
+                self.Settings[i.split(':')[0]] = (i.split(':')[1], eval(i.split(':')[2]))
+            prevsetf.close()
+        except:
+            eb()
+            self.Settings = {}
+        print(self.Settings)
         self.stage = 0
+        self.lastDownloadTime = 0
         super(Browser, self).__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.tabs = QTabWidget()
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.closeTab)
         self.tab1 = QWidget()
+        self.prefMenu = QMenu()
+        self.pmenuitems = []
         '''#set colors
 
         pal = QPalette()
@@ -30,26 +45,58 @@ class Browser(QMainWindow):
         pal.setColor(pal.Background, QColor(124, 124, 124, 0))
         pal.setColor(pal.WindowText, QColor(232, 232, 232, 0))
         pal.setColor(pal.Foreground, QColor(0, 0, 0, 0))
-        self.tab1.setPalette(pal)
-        self.tab1.setAutoFillBackground(True)
-        self.tab1.setBackgroundRole(pal.Background)
-        self.tab1.setStyleSheet('background-color: darkgray;')
-        
+
+        self.palette = pal
         
         #end set colors'''
         self.tabWebView = []
         self.lNameLine = []
         self.tabs.addTab(self.tab1,"New Tab")
-        self.tab1UI(self.tab1)
+        self.set_init()
         self.closeTab(0)
-        self.addTab()
+        print(self.getSetVal('Reopen', False) == True)
+        try:
+            self.tfile = open('saved.bhk', 'r')
+            self._tabs_ = self.tfile.read().splitlines()
+            print('---' + str(self._tabs_))
+            self.tfile.close()
+            if len(self._tabs_) > 0 and self.getSetVal('Reopen', False):
+                for tab in self._tabs_:
+                    self.addTab(url=tab)
+            else:
+                self.addTab()
+        except:
+            self.addTab()
         self.stage = 1
-        self.setWindowTitle("Gluon")
-        self.setWindowIcon(QIcon('main_icn.png'))
         self.setCentralWidget(self.tabs)
         self.showMaximized()
         QShortcut(QKeySequence("Ctrl+T"), self, self.addTab)
 
+    def set_init(self):
+        self.setWindowTitle(self.getSetVal('Browser Name', 'Gluon'))
+        self.setWindowIcon(QIcon('main_icn.png'))
+        self.tab1UI(self.tab1)
+        
+    def getSetVal(self, setting, default):
+        try:
+            _setting = self.Settings[setting]
+            if _setting[1]:
+                return _setting[0]
+            else:
+                return eval(_setting[0])
+        except:
+            eb()
+            return default
+
+    def saveTabs(self):
+        self._tabs = []
+        for i in self.tabWebView:
+            self._tabs.append(i.url().url())
+        s_tabs = open('saved.bhk', 'w')
+        s_tabs.write('\n'.join(self._tabs))
+        s_tabs.close()
+        print(self._tabs)
+            
     def addTab(self, url=None):
         try:
             tab = QWidget()
@@ -66,18 +113,20 @@ class Browser(QMainWindow):
                 self.lNameLine[self.tabs.currentIndex()].setText('https://www.google.com')
         except:
             eb()
+        self.saveTabs()
 
     def goBack(self):
-      index = self.tabs.currentIndex()
-      self.tabWebView[index].back()
+        index = self.tabs.currentIndex()
+        self.tabWebView[index].back()
 
     def goNext(self):
-      index = self.tabs.currentIndex()
-      self.tabWebView[index].forward()
+        index = self.tabs.currentIndex()
+        self.tabWebView[index].forward()
 
     def goRefresh(self):
-      index = self.tabs.currentIndex()
-      self.tabWebView[index].reload()
+        self.set_init()
+        index = self.tabs.currentIndex()
+        self.tabWebView[index].reload()
 
     def changePage(self):
         index = self.tabs.currentIndex()
@@ -89,6 +138,79 @@ class Browser(QMainWindow):
 
     def load_started(self):
         return
+
+    def setFunction(self, setid, checked):
+        try:
+            try:
+                prevsetf = open('Settings.bhk', 'r')
+                prevsetl = prevsetf.read().splitlines()
+                prevset = {}
+                for i in prevsetl:
+                    prevset[i.split(':')[0]] = (i.split(':')[1], eval(i.split(':')[2]))
+                prevsetf.close()
+            except FileNotFoundError:
+                prevset = {}
+            prevset[setid] = (str(checked), 'False')
+            self.Settings = prevset
+            print(self.Settings)
+            prevsetf = open('Settings.bhk', 'w')
+            for i in prevset.keys():
+                print(str(i) + ':' + str(prevset[i][0]) + ':' + str(prevset[i][1]), file=prevsetf)
+            prevsetf.close()
+        except:
+            eb()
+    def setFunction2(self, data, nan):
+        try:
+            try:
+                prevsetf = open('Settings.bhk', 'r')
+                prevsetl = prevsetf.read().splitlines()
+                prevset = {}
+                for i in prevsetl:
+                    prevset[i.split(':')[0]] = (i.split(':')[1], eval(i.split(':')[2]))
+                prevsetf.close()
+            except FileNotFoundError:
+                prevset = {}
+            prevset[data[0]] = (gui.enterbox(data[1]), 'True')
+            self.Settings = prevset
+            print(self.Settings)
+            prevsetf = open('Settings.bhk', 'w')
+            for i in prevset.keys():
+                print(str(i) + ':' + str(prevset[i][0]) + ':' + str(prevset[i][1]), file=prevsetf)
+            prevsetf.close()
+        except:
+            eb()
+
+    def pMenu(self, tooltip, prompt='', toggler=True):
+        action = self.prefMenu.addAction(tooltip)
+        if toggler:
+            action.setCheckable(True)
+            try:
+                action.setChecked(eval(self.Settings[tooltip][0]))
+            except:
+                eb()
+            action.toggled.connect(partial(self.setFunction, tooltip))
+        else:
+            action.triggered.connect(partial(self.setFunction2, (tooltip, prompt)))
+        self.pmenuitems.append(action)
+        
+    def settings(self):
+        self.prefButton = QPushButton("")
+        prefIcon = QIcon()
+        prefIcon.addPixmap(QPixmap("settings.png"))
+        self.prefButton.setIcon(prefIcon)
+        self.prefButton.setFlat(True)
+        self.prefButton.setToolTip('Settings')
+        self.pmenuitems = []
+        self.prefMenu = QMenu()
+
+        #add menu items
+        self.pMenu('Reopen')
+        self.pMenu('Browser Name', prompt='Please enter new browser title', toggler=False)
+        #end add menu items
+        
+        self.prefMenu.aboutToHide.connect(self.set_init)
+        self.prefButton.setMenu(self.prefMenu)
+        
     def makeFav(self):
         try:
             favs = open('favorites.bhk', 'r')
@@ -126,30 +248,37 @@ class Browser(QMainWindow):
         except FileNotFoundError:
             gui.msgbox('You have no favorites. Oh well.')
     def onDownloadRequested(self, d):
-        try:
-            dpath = open('dpath.bhk', 'r')
-            path = dpath.read()
-            dpath.close()
-        except FileNotFoundError:
-            dpath = open('dpath.bhk', 'w')
-            path = gui.diropenbox('Select default download directory')
-            if path != None:
-                dpath.write(path)
-            dpath.close()
-        print(d.url().url())
-        try:
-            if '\\' in d.path():
-                prevpath = d.path().split('\\')
-            else:
-                prevpath = d.path().split('/')
-        except:
-            eb()
-        try:
-            d.setPath(path + '\\' + prevpath[len(prevpath) - 1])
-            d.accept()
-            print(d.path())
-        except:
-            eb()
+        if  time() > self.lastDownloadTime + 10:
+            try:
+                dpath = open('dpath.bhk', 'r')
+                path = dpath.read()
+                dpath.close()
+            except FileNotFoundError:
+                dpath = open('dpath.bhk', 'w')
+                path = gui.diropenbox('Select default download directory')
+                if path != None:
+                    dpath.write(path)
+                dpath.close()
+            print(d.url().url())
+            try:
+                if '\\' in d.path():
+                    prevpath = d.path().split('\\')
+                else:
+                    prevpath = d.path().split('/')
+            except:
+                eb()
+            try:
+                d.setPath(path + '\\' + prevpath[len(prevpath) - 1])
+                d.accept()
+                print(d.path())
+            except:
+                eb()
+            self.lastDownloadTime = time()
+            gui.msgbox('Download complete.')
+        #else:
+    def onFullScreenRequested(self, r):
+        print('fsReq')
+        r.accept()
         
     def tab1UI(self,tabName):
         webView = QWebEngineView()
@@ -184,6 +313,8 @@ class Browser(QMainWindow):
         nextButton.setFlat(True)
         nextButton.setToolTip('Go Forward')
 
+        self.settings()
+
         refreshButton = QPushButton("")
         refreshIcon = QIcon()
         refreshIcon.addPixmap(QPixmap("ref.png"))
@@ -202,6 +333,7 @@ class Browser(QMainWindow):
         self.ntButton.setFlat(True)
         #self.destroyTabButton = QPushButton("-")
         self.tabWidget = QTabWidget()
+        
         self.ntButton.clicked.connect(self.addTab)
         self.ntButton.setToolTip('New Tab')
 
@@ -253,17 +385,22 @@ class Browser(QMainWindow):
         navigationGrid.addWidget(backButton,0,1)
         navigationGrid.addWidget(nextButton,0,2)
         navigationGrid.addWidget(refreshButton,0,3)
-        navigationGrid.addWidget(nameLine,0,6)
-        navigationGrid.addWidget(favButton,0,7)
-        navigationGrid.addWidget(rfavButton,0,8)
+        navigationGrid.addWidget(nameLine,0,7)
+        navigationGrid.addWidget(favButton,0,8)
+        navigationGrid.addWidget(rfavButton,0,9)
+        navigationGrid.addWidget(self.prefButton,0,6)
         navigationGrid.addWidget(self.ntButton,0,5)
-
-        self.page().profile().downloadRequested.connect(self.onDownloadRequested)
+        #try:
+            #QWebEngineSettings.globalSettings().setAttribute(QWebEngineSettings.FullScreenSupportEnabled, True)
+        self.page.profile().downloadRequested.connect(self.onDownloadRequested)
+            #self.page.fullScreenRequested.connect(self.onFullScreenRequested)
+        '''except:
+            print('fsDis')'''
         
         tabGrid.addWidget(navigationFrame)
 
         webView = QWebEngineView()
-        htmlhead = "<head><style>body{ background-color: #fff; }</style></head><body></body>";
+        htmlhead = "<head><style>body { background-color: 'black'; }</style></head><body></body>";
         webView.setHtml(htmlhead)
 
         #webView.loadProgress.connect(self.loading)
@@ -283,6 +420,7 @@ class Browser(QMainWindow):
         self.lNameLine.append(nameLine)
         tabGrid.addWidget(frame)
         tabName.setLayout(tabGrid)
+
 
     def runApp(self, _app_):
         try:
@@ -330,6 +468,8 @@ class Browser(QMainWindow):
         self.tabs.removeTab(tabId)
         if len(self.tabWebView) == 0 and self.stage == 1:
             self.addTab()
+        if self.stage == 1:
+            self.saveTabs()
 
 
 def main():
