@@ -1,12 +1,30 @@
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtWebEngineWidgets import *
-from PyQt5.QtGui import *
-import sip
+from callable_pip import main
+
+try:
+    from PyQt5.QtCore import *
+    from PyQt5.QtWidgets import *
+    from PyQt5.QtWebEngineWidgets import *
+    from PyQt5.QtGui import *
+except ImportError:
+    main(['install', 'PyQt5'])
+    from PyQt5.QtCore import *
+    from PyQt5.QtWidgets import *
+    from PyQt5.QtWebEngineWidgets import *
+    from PyQt5.QtGui import *
+
+try:
+    import sip
+except ImportError:
+    main(['install', 'SIP'])
+    import sip
 import sys
 import os
 from functools import partial
-import easygui as gui
+try:
+    import easygui as gui
+except ImportError:
+    main(['install', 'easygui'])
+    import easygui as gui
 eb = gui.exceptionbox
 import _apps
 from getpass import getuser
@@ -33,6 +51,7 @@ class Browser(QMainWindow):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.tabs = QTabWidget()
         self.tabs.setTabsClosable(True)
+        self.tabs.setMovable(True)
         self.tabs.tabCloseRequested.connect(self.closeTab)
         self.tab1 = QWidget()
         self.prefMenu = QMenu()
@@ -50,6 +69,7 @@ class Browser(QMainWindow):
         
         #end set colors'''
         self.tabWebView = []
+        #self.setStyleSheet("QMainWindow {background: 'darkgray';} QWidget {background: '#8e8e8e'; border: '#424242';} QTabWidget {background: 'darkgray';} QLineEdit {background: 'black'; color: 'white'; border-color: 'darkgray';}")
         self.lNameLine = []
         self.tabs.addTab(self.tab1,"New Tab")
         self.set_init()
@@ -192,7 +212,7 @@ class Browser(QMainWindow):
         else:
             action.triggered.connect(partial(self.setFunction2, (tooltip, prompt)))
         self.pmenuitems.append(action)
-        
+
     def settings(self):
         self.prefButton = QPushButton("")
         prefIcon = QIcon()
@@ -208,7 +228,7 @@ class Browser(QMainWindow):
         self.pMenu('Browser Name', prompt='Please enter new browser title', toggler=False)
         #end add menu items
         
-        self.prefMenu.aboutToHide.connect(self.set_init)
+        #self.prefMenu.aboutToHide.connect(self.set_init)
         self.prefButton.setMenu(self.prefMenu)
         
     def makeFav(self):
